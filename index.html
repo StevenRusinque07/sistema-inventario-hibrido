@@ -45,7 +45,6 @@
         .login-box input:focus { outline: none; border-color: var(--ac-black); background: var(--ac-white); }
         .login-box button { width: 100%; padding: 14px; background-color: var(--ac-black); color: var(--ac-white); border: none; font-weight: 400; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: background 0.3s; }
         .login-box button:hover { background-color: #333; }
-        .login-box p { margin-top: 25px; color: #888; font-size: 0.75rem; line-height: 1.6; }
 
         /* Navegación (Pestañas Minimalistas) */
         .tabs { display: flex; gap: 30px; margin-bottom: 40px; border-bottom: 1px solid var(--ac-border); }
@@ -116,7 +115,6 @@
                 <input type="password" id="login-pass" placeholder="Contraseña" required><br>
                 <button type="submit">Ingresar</button>
             </form>
-            <p><small>admin / admin123<br>vendedor / vend123<br>bodeguero / bod123<br>cliente / client123</small></p>
         </div>
     </div>
 
@@ -138,7 +136,7 @@
             <button id="btn-tab-dash" class="tab-btn active" onclick="switchTab('tab-dashboard')">Resumen</button>
             <button id="btn-tab-inv" class="tab-btn" onclick="switchTab('tab-inventario')">Catálogo Web</button>
             <button id="btn-tab-pos" class="tab-btn" onclick="switchTab('tab-pos')">Punto de Venta</button>
-            <button id="btn-tab-hist" class="tab-btn" onclick="switchTab('tab-historial')">Auditoría</button>
+            <button id="btn-tab-hist" class="tab-btn" onclick="switchTab('tab-historial')">Contabilidad</button>
         </div>
 
         <!-- Pestaña Dashboard -->
@@ -236,7 +234,7 @@
             <button class="btn-submit full-width" onclick="procesarVenta()">Facturar Orden</button>
         </div>
 
-        <!-- Pestaña Historial -->
+        <!-- Pestaña Historial / Contabilidad -->
         <div id="tab-historial" class="tab-content">
             <h2>Registro de Transacciones</h2>
             <table>
@@ -249,7 +247,7 @@
             <h2 style="margin-top: 40px;">Bitácora de Inventario</h2>
             <table>
                 <thead>
-                    <tr><th>Ref Mov.</th><th>Fecha</th><th>Artículo</th><th>Concepto</th><th>Cant.</th><th>Auditoría</th></tr>
+                    <tr><th>Ref Mov.</th><th>Fecha</th><th>Artículo</th><th>Concepto</th><th>Cant.</th><th>Contabilidad</th></tr>
                 </thead>
                 <tbody id="tabla-movimientos"></tbody>
             </table>
