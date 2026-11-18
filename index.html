@@ -245,16 +245,61 @@
 
     <script>
         const API_URL = "http://127.0.0.1:8000/";
+        const TIEMPO_EXPIRACION_MS = 10 * 60 * 1000; // 10 minutos sin actividad
         let usuarioActual = null;
         let tabActiva = "tab-dashboard";
         let prendasCache = [];
         let carrito = [];
+        let ultimoRegistroActividad = 0;
 
         // Estados previos para evitar re-renderizados innecesarios
         let cacheStrDashboard = "";
         let cacheStrPrendas = "";
         let cacheStrVentas = "";
         let cacheStrMovs = "";
+
+        // Registrar actividad del usuario (con límite de escritura cada 5s)
+        function registrarActividad() {
+            if (!usuarioActual) return;
+            const ahora = Date.now();
+            if (ahora - ultimoRegistroActividad > 5000) {
+                ultimoRegistroActividad = ahora;
+                localStorage.setItem("sesion_ultima_actividad", ahora.toString());
+            }
+        }
+
+        ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"].forEach(evento => {
+            window.addEventListener(evento, registrarActividad, { passive: true });
+        });
+
+        // Restaurar sesión al recargar si no han pasado 10 minutos sin actividad
+        function verificarSesionGuardada() {
+            const sesionStr = localStorage.getItem("sesion_usuario");
+            const ultimaActStr = localStorage.getItem("sesion_ultima_actividad");
+
+            if (!sesionStr || !ultimaActStr) return;
+
+            const ultimaAct = parseInt(ultimaActStr, 10);
+            if (isNaN(ultimaAct) || (Date.now() - ultimaAct >= TIEMPO_EXPIRACION_MS)) {
+                localStorage.removeItem("sesion_usuario");
+                localStorage.removeItem("sesion_ultima_actividad");
+                localStorage.removeItem("sesion_tab_activa");
+                return;
+            }
+
+            try {
+                usuarioActual = JSON.parse(sesionStr);
+                const ahora = Date.now();
+                ultimoRegistroActividad = ahora;
+                localStorage.setItem("sesion_ultima_actividad", ahora.toString());
+                limpiarCachesVisuales();
+                aplicarPermisosRol(true);
+                document.getElementById("section-login").style.display = "none";
+                document.getElementById("section-app").style.display = "block";
+            } catch (e) {
+                cerrarSesion();
+            }
+        }
 
         async function iniciarSesion(e) {
             e.preventDefault();
@@ -271,8 +316,12 @@
                 if (res.ok) {
                     const data = await res.json();
                     usuarioActual = data.usuario;
+                    const ahora = Date.now();
+                    ultimoRegistroActividad = ahora;
+                    localStorage.setItem("sesion_usuario", JSON.stringify(usuarioActual));
+                    localStorage.setItem("sesion_ultima_actividad", ahora.toString());
                     limpiarCachesVisuales();
-                    aplicarPermisosRol();
+                    aplicarPermisosRol(false);
                     document.getElementById("section-login").style.display = "none";
                     document.getElementById("section-app").style.display = "block";
                 } else {
@@ -293,13 +342,17 @@
 
         function cerrarSesion() {
             usuarioActual = null;
+            carrito = [];
             limpiarCachesVisuales();
+            localStorage.removeItem("sesion_usuario");
+            localStorage.removeItem("sesion_ultima_actividad");
+            localStorage.removeItem("sesion_tab_activa");
             document.getElementById("section-login").style.display = "flex";
             document.getElementById("section-app").style.display = "none";
             document.getElementById("form-login").reset();
         }
 
-        function aplicarPermisosRol() {
+        function aplicarPermisosRol(restaurarTab = false) {
             const rol = usuarioActual.rol;
             document.getElementById("user-display").innerText = `${usuarioActual.nombre} | ${rol}`;
 
@@ -315,12 +368,28 @@
             btnTabHist.style.display = (rol === "Cliente") ? "none" : "inline-block";
             blockRegistro.style.display = (rol === "Administrador" || rol === "Bodeguero") ? "block" : "none";
 
-            if (rol === "Administrador") switchTab('tab-dashboard');
-            else switchTab('tab-inventario');
+            const tabsPermitidas = {
+                "Administrador": ["tab-dashboard", "tab-inventario", "tab-pos", "tab-historial"],
+                "Vendedor": ["tab-inventario", "tab-pos", "tab-historial"],
+                "Bodeguero": ["tab-inventario", "tab-historial"],
+                "Cliente": ["tab-inventario"]
+            };
+
+            const tabGuardada = localStorage.getItem("sesion_tab_activa");
+            if (restaurarTab && tabGuardada && (tabsPermitidas[rol] || []).includes(tabGuardada)) {
+                switchTab(tabGuardada);
+            } else if (rol === "Administrador") {
+                switchTab('tab-dashboard');
+            } else {
+                switchTab('tab-inventario');
+            }
         }
 
         function switchTab(tabId) {
             tabActiva = tabId;
+            if (usuarioActual) {
+                localStorage.setItem("sesion_tab_activa", tabId);
+            }
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
@@ -334,9 +403,18 @@
             if (tabId === 'tab-historial') { cargarHistorialVentas(); cargarMovimientos(); }
         }
 
-        // Sincronización automática en tiempo real cada 1.5 segundos
+        // Sincronización automática en tiempo real y verificación de inactividad cada 1.5 segundos
         setInterval(async () => {
-            if (!usuarioActual || document.hidden) return;
+            if (!usuarioActual) return;
+
+            const ultimaAct = parseInt(localStorage.getItem("sesion_ultima_actividad") || "0", 10);
+            if (Date.now() - ultimaAct >= TIEMPO_EXPIRACION_MS) {
+                cerrarSesion();
+                alert("Tu sesión se cerró automáticamente tras 10 minutos de inactividad.");
+                return;
+            }
+
+            if (document.hidden) return;
             if (tabActiva === 'tab-dashboard') await cargarDashboard();
             else if (tabActiva === 'tab-inventario') await cargarPrendas();
             else if (tabActiva === 'tab-pos') await cargarPrendasEnPOS();
@@ -578,6 +656,9 @@
                 });
             } catch (err) { console.error(err); }
         }
+
+        // Ejecutar verificación de sesión al cargar la página
+        verificarSesionGuardada();
     </script>
 </body>
 </html>
