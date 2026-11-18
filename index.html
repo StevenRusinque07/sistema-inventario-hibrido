@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión y Catálogo</title>
+    <style>
+        /* Paleta Minimalista - Estilo Alta Costura */
+        :root {
+            --ac-black: #000000;
+            --ac-dark: #1a1a1a;
+            --ac-gray: #f5f5f5;
+            --ac-border: #e5e5e5;
+            --ac-white: #ffffff;
+            --ac-red: #c91414;
+            --ac-green: #15803d;
+            --font-main: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); }
+        body { background-color: var(--ac-gray); color: var(--ac-dark); line-height: 1.6; padding: 40px 20px; }
+
+        /* Contenedor Principal */
+        .container { max-width: 1100px; margin: 0 auto; background: var(--ac-white); padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        
+        /* Encabezado */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ac-black); padding-bottom: 20px; margin-bottom: 30px; }
+        .header-title-group { display: flex; align-items: center; gap: 15px; }
+        .header-bar h1 { font-size: 1.4rem; font-weight: 400; text-transform: uppercase; letter-spacing: 2px; color: var(--ac-black); }
+        
+        /* Indicador En Vivo */
+        .live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ac-green); border: 1px solid #bbf7d0; background: #f0fdf4; padding: 4px 10px; }
+        .live-dot { width: 7px; height: 7px; background-color: var(--ac-green); border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .user-info { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-right: 15px; }
+        .btn-logout { background: transparent; color: var(--ac-black); border: 1px solid var(--ac-black); padding: 8px 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; }
+        .btn-logout:hover { background: var(--ac-black); color: var(--ac-white); }
+
+        /* Pantalla de Login */
+        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .login-box { width: 100%; max-width: 400px; padding: 50px 40px; background: var(--ac-white); border: 1px solid var(--ac-border); text-align: center; }
+        .login-box h2 { font-size: 1.2rem; font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; color: var(--ac-black); }
+        .login-box input { width: 100%; margin-bottom: 20px; padding: 12px 15px; font-size: 0.9rem; border: 1px solid var(--ac-border); background: #fafafa; border-radius: 0; transition: border 0.3s; }
+        .login-box input:focus { outline: none; border-color: var(--ac-black); background: var(--ac-white); }
+        .login-box button { width: 100%; padding: 14px; background-color: var(--ac-black); color: var(--ac-white); border: none; font-weight: 400; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: background 0.3s; }
+        .login-box button:hover { background-color: #333; }
+        .login-box p { margin-top: 25px; color: #888; font-size: 0.75rem; line-height: 1.6; }
+
+        /* Navegación (Pestañas Minimalistas) */
+        .tabs { display: flex; gap: 30px; margin-bottom: 40px; border-bottom: 1px solid var(--ac-border); }
+        .tab-btn { padding: 0 0 15px 0; font-size: 0.85rem; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; border: none; background: transparent; color: #999; cursor: pointer; position: relative; }
+        .tab-btn:hover { color: var(--ac-black); }
+        .tab-btn.active { color: var(--ac-black); font-weight: 600; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: var(--ac-black); }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Tipografía Interior */
+        h2 { font-size: 1.1rem; font-weight: 400; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; color: var(--ac-black); border-bottom: 1px solid var(--ac-border); padding-bottom: 10px; }
+        h3 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+
+        /* Formularios y Botones Generales */
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+        input, select { padding: 12px; font-size: 0.9rem; border: 1px solid var(--ac-border); border-radius: 0; background: var(--ac-white); color: var(--ac-dark); }
+        input:focus, select:focus { outline: none; border-color: var(--ac-black); }
+        .full-width { grid-column: span 2; }
+        .btn-submit { background-color: var(--ac-black); color: var(--ac-white); border: none; padding: 14px; font-weight: 400; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: background 0.3s; }
+        .btn-submit:hover { background-color: #333; }
+
+        /* Catálogo: Grid de Productos (Estilo Tienda Online) */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; margin-top: 20px; }
+        .product-card { border: 1px solid var(--ac-border); padding: 25px 20px; background: var(--ac-white); text-align: center; position: relative; transition: transform 0.2s, box-shadow 0.2s; }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.04); }
+        .card-category { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 10px; }
+        .product-card h4 { font-size: 1.1rem; font-weight: 300; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; color: var(--ac-black); }
+        .product-card .talla { font-size: 0.8rem; color: #666; margin-bottom: 5px; }
+        .product-card .price { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; }
+        .product-card .stock { font-size: 0.75rem; padding: 5px 0; border-top: 1px solid var(--ac-border); border-bottom: 1px solid var(--ac-border); margin-bottom: 15px; color: #555; }
+        
+        .card-actions { display: flex; justify-content: center; gap: 10px; }
+        .btn-mini { padding: 6px 12px; font-size: 0.7rem; border: 1px solid var(--ac-black); background: transparent; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .btn-mini:hover { background: var(--ac-black); color: var(--ac-white); }
+        .btn-mini-del { border-color: var(--ac-red); color: var(--ac-red); }
+        .btn-mini-del:hover { background: var(--ac-red); color: var(--ac-white); }
+
+        /* Tablas (Estilo Factura/Reporte Elegante) */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
+        th, td { padding: 15px 10px; text-align: left; border-bottom: 1px solid var(--ac-border); font-size: 0.85rem; }
+        th { font-weight: 600; color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1.5px; }
+        tbody tr:hover { background-color: #fafafa; }
+        .text-right { text-align: right; }
+
+        /* Dashboard KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 40px; }
+        .kpi-card { padding: 30px 20px; border: 1px solid var(--ac-border); text-align: center; background: #fafafa; }
+        .kpi-title { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .kpi-value { font-size: 2rem; font-weight: 300; color: var(--ac-black); }
+        .alert-text { color: var(--ac-red); }
+        .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+        /* Punto de Venta */
+        .venta-box { padding: 30px; border: 1px solid var(--ac-black); background: #fafafa; margin-bottom: 30px; }
+        .total-highlight { font-size: 1.5rem; font-weight: 300; text-align: right; border-top: 1px solid var(--ac-border); padding-top: 15px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="section-login" class="login-wrapper">
+        <div class="login-box">
+            <h2>Acceso Corporativo</h2>
+            <form id="form-login" onsubmit="iniciarSesion(event)" style="display: block;">
+                <input type="text" id="login-user" placeholder="Usuario" required><br>
+                <input type="password" id="login-pass" placeholder="Contraseña" required><br>
+                <button type="submit">Ingresar</button>
+            </form>
+            <p><small>admin / admin123<br>vendedor / vend123<br>bodeguero / bod123<br>cliente / client123</small></p>
+        </div>
+    </div>
+
+    <!-- PANEL PRINCIPAL -->
+    <div id="section-app" class="container" style="display: none;">
+        <div class="header-bar">
+            <div class="header-title-group">
+                <h1>Sistema & Catálogo</h1>
+                <span class="live-badge"><span class="live-dot"></span>En Vivo</span>
+            </div>
+            <div>
+                <span id="user-display" class="user-info"></span>
+                <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <!-- Pestañas de Navegación -->
+        <div class="tabs">
+            <button id="btn-tab-dash" class="tab-btn active" onclick="switchTab('tab-dashboard')">Resumen</button>
+            <button id="btn-tab-inv" class="tab-btn" onclick="switchTab('tab-inventario')">Catálogo Web</button>
+            <button id="btn-tab-pos" class="tab-btn" onclick="switchTab('tab-pos')">Punto de Venta</button>
+            <button id="btn-tab-hist" class="tab-btn" onclick="switchTab('tab-historial')">Auditoría</button>
+        </div>
+
+        <!-- Pestaña Dashboard -->
+        <div id="tab-dashboard" class="tab-content active">
+            <h2>Indicadores de Negocio</h2>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Ingresos Totales</div>
+                    <div class="kpi-value">$<span id="kpi-ingresos">0.00</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Operaciones</div>
+                    <div class="kpi-value"><span id="kpi-ventas">0</span></div>
+                </div>
+                <div class="kpi-card" style="border-bottom: 3px solid var(--ac-red);">
+                    <div class="kpi-title">Alertas de Stock</div>
+                    <div class="kpi-value alert-text"><span id="kpi-alertas">0</span></div>
+                </div>
+            </div>
+
+            <div class="dash-row">
+                <div>
+                    <h3>Ventas por Línea</h3>
+                    <table>
+                        <thead><tr><th>Línea</th><th class="text-right">Ingresos</th></tr></thead>
+                        <tbody id="tabla-dash-cat"></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3>Top 5 Artículos</h3>
+                    <table>
+                        <thead><tr><th>Prenda</th><th>Uds</th><th class="text-right">Ingresos</th></tr></thead>
+                        <tbody id="tabla-dash-top"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; color: var(--ac-red);">Atención: Inventario Crítico</h3>
+            <table>
+                <thead><tr><th>Ref</th><th>Artículo</th><th>Línea</th><th>Talla</th><th class="text-right">Stock Disp.</th></tr></thead>
+                <tbody id="tabla-dash-critico"></tbody>
+            </table>
+        </div>
+
+        <!-- Pestaña Inventario / Catálogo -->
+        <div id="tab-inventario" class="tab-content">
+            <div id="block-registro-prenda">
+                <h2>Ingreso de Nueva Colección</h2>
+                <form id="form-prenda">
+                    <input type="text" id="nombre" placeholder="Nombre de la prenda" required class="full-width">
+                    <select id="categoria" required>
+                        <option value="Hombre">Línea Hombre</option>
+                        <option value="Mujer">Línea Mujer</option>
+                        <option value="General" selected>Línea Unisex</option>
+                    </select>
+                    <input type="text" id="talla" placeholder="Talla (ej. M, L, 32)" required>
+                    <input type="number" id="precio" placeholder="Precio de Venta" step="0.01" required>
+                    <input type="number" id="stock" placeholder="Unidades iniciales" required>
+                    <button type="submit" class="btn-submit full-width">Registrar Artículo</button>
+                </form>
+            </div>
+
+            <h2>Catálogo Digital</h2>
+            <div class="product-grid" id="grid-prendas"></div>
+        </div>
+
+        <!-- Pestaña Punto de Venta -->
+        <div id="tab-pos" class="tab-content">
+            <h2>Terminal de Punto de Venta</h2>
+            <div class="venta-box">
+                <form id="form-venta" onsubmit="agregarAlCarrito(event)">
+                    <select id="select-prenda" class="full-width" required>
+                        <option value="">Buscar artículo por referencia...</option>
+                    </select>
+                    <input type="number" id="venta-cantidad" placeholder="Cantidad" min="1" value="1" required>
+                    <button type="submit" class="btn-submit">Añadir a la Orden</button>
+                </form>
+            </div>
+
+            <h3>Detalle de la Orden</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Artículo</th>
+                        <th class="text-right">Precio Unit.</th>
+                        <th class="text-right">Cant.</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Remover</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-carrito"></tbody>
+            </table>
+            <div class="total-highlight">Total Orden: $<span id="total-venta">0.00</span></div>
+            <br>
+            <button class="btn-submit full-width" onclick="procesarVenta()">Facturar Orden</button>
+        </div>
+
+        <!-- Pestaña Historial -->
+        <div id="tab-historial" class="tab-content">
+            <h2>Registro de Transacciones</h2>
+            <table>
+                <thead>
+                    <tr><th>Factura</th><th>Fecha</th><th>Detalle</th><th class="text-right">Total</th></tr>
+                </thead>
+                <tbody id="tabla-ventas"></tbody>
+            </table>
+
+            <h2 style="margin-top: 40px;">Bitácora de Inventario</h2>
+            <table>
+                <thead>
+                    <tr><th>Ref Mov.</th><th>Fecha</th><th>Artículo</th><th>Concepto</th><th>Cant.</th><th>Auditoría</th></tr>
+                </thead>
+                <tbody id="tabla-movimientos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/";
+        let usuarioActual = null;
+        let tabActiva = "tab-dashboard";
+        let prendasCache = [];
+        let carrito = [];
+
+        // Estados previos para evitar re-renderizados innecesarios
+        let cacheStrDashboard = "";
+        let cacheStrPrendas = "";
+        let cacheStrVentas = "";
+        let cacheStrMovs = "";
+
+        async function iniciarSesion(e) {
+            e.preventDefault();
+            const username = document.getElementById("login-user").value.trim();
+            const password = document.getElementById("login-pass").value.trim();
+
+            try {
+                const res = await fetch(API_URL + "login/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    usuarioActual = data.usuario;
+                    limpiarCachesVisuales();
+                    aplicarPermisosRol();
+                    document.getElementById("section-login").style.display = "none";
+                    document.getElementById("section-app").style.display = "block";
+                } else {
+                    alert("Credenciales inválidas. Verifica usuario y contraseña en minúsculas.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("No se pudo conectar con el servidor (http://127.0.0.1:8000). Verifica que uvicorn esté corriendo en la terminal.");
+            }
+        }
+
+        function limpiarCachesVisuales() {
+            cacheStrDashboard = "";
+            cacheStrPrendas = "";
+            cacheStrVentas = "";
+            cacheStrMovs = "";
+        }
+
+        function cerrarSesion() {
+            usuarioActual = null;
+            limpiarCachesVisuales();
+            document.getElementById("section-login").style.display = "flex";
+            document.getElementById("section-app").style.display = "none";
+            document.getElementById("form-login").reset();
+        }
+
+        function aplicarPermisosRol() {
+            const rol = usuarioActual.rol;
+            document.getElementById("user-display").innerText = `${usuarioActual.nombre} | ${rol}`;
+
+            const btnTabDash = document.getElementById("btn-tab-dash");
+            const btnTabInv = document.getElementById("btn-tab-inv");
+            const btnTabPos = document.getElementById("btn-tab-pos");
+            const btnTabHist = document.getElementById("btn-tab-hist");
+            const blockRegistro = document.getElementById("block-registro-prenda");
+
+            btnTabDash.style.display = (rol === "Administrador") ? "inline-block" : "none";
+            btnTabInv.style.display = "inline-block";
+            btnTabPos.style.display = (rol === "Cliente" || rol === "Bodeguero") ? "none" : "inline-block";
+            btnTabHist.style.display = (rol === "Cliente") ? "none" : "inline-block";
+            blockRegistro.style.display = (rol === "Administrador" || rol === "Bodeguero") ? "block" : "none";
+
+            if (rol === "Administrador") switchTab('tab-dashboard');
+            else switchTab('tab-inventario');
+        }
+
+        function switchTab(tabId) {
+            tabActiva = tabId;
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            const btns = { 'tab-dashboard': 'btn-tab-dash', 'tab-inventario': 'btn-tab-inv', 'tab-pos': 'btn-tab-pos', 'tab-historial': 'btn-tab-hist' };
+            if (btns[tabId]) document.getElementById(btns[tabId]).classList.add('active');
+
+            if (tabId === 'tab-dashboard') cargarDashboard();
+            if (tabId === 'tab-inventario') cargarPrendas();
+            if (tabId === 'tab-pos') cargarPrendasEnPOS();
+            if (tabId === 'tab-historial') { cargarHistorialVentas(); cargarMovimientos(); }
+        }
+
+        // Sincronización automática en tiempo real cada 1.5 segundos
+        setInterval(async () => {
+            if (!usuarioActual || document.hidden) return;
+            if (tabActiva === 'tab-dashboard') await cargarDashboard();
+            else if (tabActiva === 'tab-inventario') await cargarPrendas();
+            else if (tabActiva === 'tab-pos') await cargarPrendasEnPOS();
+            else if (tabActiva === 'tab-historial') {
+                await cargarHistorialVentas();
+                await cargarMovimientos();
+            }
+        }, 1500);
+
+        async function cargarDashboard() {
+            try {
+                const res = await fetch(API_URL + "reportes/dashboard");
+                const data = await res.json();
+                const nuevoEstado = JSON.stringify(data);
+                if (nuevoEstado === cacheStrDashboard) return;
+                cacheStrDashboard = nuevoEstado;
+
+                document.getElementById("kpi-ingresos").innerText = data.resumen.total_ingresos.toFixed(2);
+                document.getElementById("kpi-ventas").innerText = data.resumen.total_ventas;
+                document.getElementById("kpi-alertas").innerText = data.resumen.alertas_stock;
+
+                const tbodyCat = document.getElementById("tabla-dash-cat");
+                tbodyCat.innerHTML = "";
+                data.ventas_categoria.forEach(c => {
+                    tbodyCat.innerHTML += `<tr><td>Línea ${c.categoria}</td><td class="text-right">$${c.total.toFixed(2)}</td></tr>`;
+                });
+
+                const tbodyTop = document.getElementById("tabla-dash-top");
+                tbodyTop.innerHTML = "";
+                data.top_prendas.forEach(t => {
+                    tbodyTop.innerHTML += `<tr><td>${t.nombre} (${t.talla})</td><td>${t.unidades}</td><td class="text-right">$${t.ingresos.toFixed(2)}</td></tr>`;
+                });
+
+                const tbodyCritico = document.getElementById("tabla-dash-critico");
+                tbodyCritico.innerHTML = "";
+                if (data.bajo_stock.length === 0) {
+                    tbodyCritico.innerHTML = `<tr><td colspan="5" style="text-align:center;">Inventario saludable.</td></tr>`;
+                } else {
+                    data.bajo_stock.forEach(b => {
+                        tbodyCritico.innerHTML += `<tr>
+                            <td>#${b.id}</td><td>${b.nombre}</td><td>${b.categoria}</td><td>${b.talla}</td><td class="text-right alert-text"><strong>${b.stock}</strong></td>
+                        </tr>`;
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function cargarPrendas() {
+            try {
+                const res = await fetch(API_URL + "prendas/");
+                const data = await res.json();
+                const rol = usuarioActual ? usuarioActual.rol : "Cliente";
+                const nuevoEstado = JSON.stringify({ data, rol });
+                if (nuevoEstado === cacheStrPrendas) return;
+                cacheStrPrendas = nuevoEstado;
+
+                prendasCache = data;
+                const grid = document.getElementById("grid-prendas");
+                grid.innerHTML = "";
+
+                const mostrarAcciones = (rol === "Administrador" || rol === "Bodeguero");
+
+                prendasCache.forEach(p => {
+                    let colAccionesHTML = "";
+                    if (mostrarAcciones) {
+                        colAccionesHTML = `<div class="card-actions">
+                            <button class="btn-mini" onclick="modificarStock(${p.id}, 1)">+1 In</button>
+                            <button class="btn-mini" onclick="modificarStock(${p.id}, -1)">-1 Out</button>
+                            ${rol === "Administrador" ? `<button class="btn-mini btn-mini-del" onclick="eliminarPrenda(${p.id})">Remover</button>` : ''}
+                        </div>`;
+                    }
+
+                    const card = `<div class="product-card">
+                        <div class="card-category">Línea ${p.categoria}</div>
+                        <h4>${p.nombre}</h4>
+                        <p class="talla">Talla: <strong>${p.talla}</strong></p>
+                        <p class="price">$${p.precio}</p>
+                        <p class="stock">REF: ${p.id} &nbsp;|&nbsp; STOCK: <strong>${p.stock}</strong></p>
+                        ${colAccionesHTML}
+                    </div>`;
+                    grid.innerHTML += card;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function modificarStock(id, cambio) {
+            try {
+                const res = await fetch(`${API_URL}prendas/${id}/stock`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cantidad: cambio })
+                });
+                if (res.ok) cargarPrendas();
+            } catch (err) { console.error(err); }
+        }
+
+        async function eliminarPrenda(id) {
+            if (!confirm(`¿Confirmar eliminación de la referencia #${id}?`)) return;
+            try {
+                const res = await fetch(`${API_URL}prendas/${id}`, { method: "DELETE" });
+                if (res.ok) cargarPrendas();
+            } catch (err) { console.error(err); }
+        }
+
+        document.getElementById("form-prenda").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const nueva = {
+                nombre: document.getElementById("nombre").value,
+                categoria: document.getElementById("categoria").value,
+                talla: document.getElementById("talla").value,
+                precio: parseFloat(document.getElementById("precio").value),
+                stock: parseInt(document.getElementById("stock").value)
+            };
+            const res = await fetch(API_URL + "prendas/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nueva)
+            });
+            if (res.ok) {
+                document.getElementById("form-prenda").reset();
+                cargarPrendas();
+            }
+        });
+
+        async function cargarPrendasEnPOS() {
+            const estadoAnterior = cacheStrPrendas;
+            await cargarPrendas();
+            const select = document.getElementById("select-prenda");
+            if (estadoAnterior === cacheStrPrendas && select.options.length > 1) return;
+
+            const seleccionPrevia = select.value;
+            select.innerHTML = `<option value="">Buscar artículo por referencia...</option>`;
+            prendasCache.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">REF: ${p.id} - ${p.nombre} (${p.talla}) - $${p.precio} [Stock: ${p.stock}]</option>`;
+            });
+            if (seleccionPrevia) select.value = seleccionPrevia;
+        }
+
+        function agregarAlCarrito(e) {
+            e.preventDefault();
+            const prendaId = parseInt(document.getElementById("select-prenda").value);
+            const cantidad = parseInt(document.getElementById("venta-cantidad").value);
+            
+            const prenda = prendasCache.find(p => p.id === prendaId);
+            if (!prenda || cantidad > prenda.stock) return alert("Cantidad o stock inválido.");
+
+            const existe = carrito.find(i => i.prenda_id === prendaId);
+            if (existe) {
+                if (existe.cantidad + cantidad > prenda.stock) return alert("Excede stock disponible.");
+                existe.cantidad += cantidad;
+            } else {
+                carrito.push({ prenda_id: prendaId, nombre: prenda.nombre, precio: prenda.precio, cantidad: cantidad });
+            }
+            renderCarrito();
+        }
+
+        function renderCarrito() {
+            const tbody = document.getElementById("tabla-carrito");
+            tbody.innerHTML = "";
+            let total = 0;
+            carrito.forEach((item, index) => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                tbody.innerHTML += `<tr>
+                    <td>${item.nombre}</td>
+                    <td class="text-right">$${item.precio}</td>
+                    <td class="text-right">${item.cantidad}</td>
+                    <td class="text-right">$${subtotal.toFixed(2)}</td>
+                    <td class="text-right"><button class="btn-mini btn-mini-del" onclick="removerDelCarrito(${index})">X</button></td>
+                </tr>`;
+            });
+            document.getElementById("total-venta").innerText = total.toFixed(2);
+        }
+
+        function removerDelCarrito(index) {
+            carrito.splice(index, 1);
+            renderCarrito();
+        }
+
+        async function procesarVenta() {
+            if (carrito.length === 0) return alert("Orden vacía.");
+            const payload = { items: carrito.map(i => ({ prenda_id: i.prenda_id, cantidad: i.cantidad })) };
+            try {
+                const res = await fetch(API_URL + "ventas/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert("¡Facturación exitosa!");
+                    carrito = [];
+                    renderCarrito();
+                    cargarPrendasEnPOS();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function cargarHistorialVentas() {
+            try {
+                const res = await fetch(API_URL + "ventas/");
+                const ventas = await res.json();
+                const nuevoEstado = JSON.stringify(ventas);
+                if (nuevoEstado === cacheStrVentas) return;
+                cacheStrVentas = nuevoEstado;
+
+                const tbody = document.getElementById("tabla-ventas");
+                tbody.innerHTML = "";
+                ventas.forEach(v => {
+                    let detalleTexto = v.detalles.map(d => `${d.nombre} x${d.cantidad}`).join(", ");
+                    tbody.innerHTML += `<tr>
+                        <td>#000${v.id}</td>
+                        <td>${v.fecha}</td>
+                        <td><small>${detalleTexto || 'N/A'}</small></td>
+                        <td class="text-right"><strong>$${v.total.toFixed(2)}</strong></td>
+                    </tr>`;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function cargarMovimientos() {
+            try {
+                const res = await fetch(API_URL + "movimientos/");
+                const movs = await res.json();
+                const nuevoEstado = JSON.stringify(movs);
+                if (nuevoEstado === cacheStrMovs) return;
+                cacheStrMovs = nuevoEstado;
+
+                const tbody = document.getElementById("tabla-movimientos");
+                tbody.innerHTML = "";
+                movs.forEach(m => {
+                    tbody.innerHTML += `<tr>
+                        <td>#${m.id}</td>
+                        <td>${m.fecha}</td>
+                        <td>${m.prenda}</td>
+                        <td>${m.tipo}</td>
+                        <td>${m.cantidad > 0 ? '+' + m.cantidad : m.cantidad}</td>
+                        <td>${m.motivo}</td>
+                    </tr>`;
+                });
+            } catch (err) { console.error(err); }
+        }
+    </script>
+</body>
+</html>
